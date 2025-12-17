@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Tic-Tac-Toe</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --cell-bg: #1e293b;
+            --text: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .player-input {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .player-inputs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+
+        .player-input label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .player-input input {
+            background-color: var(--cell-bg);
+            border: 1px solid #334155;
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+            width: 140px;
+        }
+
+        .player-input input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modes {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--cell-bg);
+            color: white;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+        button.active {
+            background: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Shine Effect on Hover */
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+        button:hover::before {
+            left: 100%;
+        }
+        #status {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            height: 1.5rem;
+            font-weight: 300;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 1.5rem;
+        }
+        .cell {
+            aspect-ratio: 1 / 1;
+            background: var(--cell-bg);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .cell:hover {
+            background: #334155;
+            transform: scale(1.02);
+        }
+        .cell.taken {
+            cursor: not-allowed;
+        }
+        .cell.x { color: var(--primary); }
+        .cell.o { color: var(--secondary); }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #reset-btn {
+            background: #ef4444;
+            width: 100%;
+        }
+        #reset-btn:hover {
+            background: #dc2626;
+        }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .cell span {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #celebration-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .celebration-content {
+            text-align: center;
+            position: relative;
+        }
+
+        #winner-message {
+            font-size: 3rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 1.5s ease-in-out infinite alternate;
+            margin-bottom: 10px;
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px var(--primary); }
+            to { text-shadow: 0 0 20px #fff, 0 0 30px var(--secondary), 0 0 40px var(--secondary); }
+        }
+        .sparkle {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: sparkle-anim 0.8s ease-out forwards;
+        }
+        @keyframes sparkle-anim {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        #celebration-overlay p {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+
+        <div class="player-inputs">
+            <div class="player-input">
+                <label for="player-x-name">Player 1 (X)</label>
+                <input type="text" id="player-x-name" value="Player 1" placeholder="Enter Player 1 Name">
+            </div>
+            <div class="player-input" id="player-o-input-container">
+                <label for="player-o-name">Player 2 (O)</label>
+                <input type="text" id="player-o-name" value="Player 2" placeholder="Enter Player 2 Name">
+            </div>
+        </div>
+
+        <div class="modes">
+            <button id="pvp-mode" class="active" onclick="setMode('pvp')">Player vs Player</button>
+            <button id="pvc-mode" onclick="setMode('pvc')">Player vs CPU</button>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="controls">
+            <button id="reset-btn" onclick="resetGame()">Restart Game</button>
+        </div>
+    </div>
+
+    <div id="celebration-overlay">
+        <div class="celebration-content">
+            <h2 id="winner-message"></h2>
+            <p>Click anywhere to continue</p>
+        </div>
+    </div>
+
+    <script>
+        // Game State Variables
+        let boardState = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "X"; // X always starts
+        let isGameActive = true;
+        let gameMode = 'pvp'; // 'pvp' or 'pvc'
+
+        const statusDisplay = document.getElementById('status'),
+              cells = document.querySelectorAll('.cell'),
+              playerXInput = document.getElementById('player-x-name'),
+              playerOInput = document.getElementById('player-o-name'),
+              celebrationOverlay = document.getElementById('celebration-overlay');
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function getPlayerName(playerSymbol) {
+            if (playerSymbol === 'X') {
+                return playerXInput.value || 'Player 1';
+            } else {
+                if (gameMode === 'pvc') return 'CPU';
+                return playerOInput.value || 'Player 2';
+            }
+        }
+
+        function handleCellClick(clickedCellEvent) {
+            const clickedCell = clickedCellEvent.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (boardState[clickedCellIndex] !== "" || !isGameActive) return;
+
+            makeMove(clickedCell, clickedCellIndex);
+            if (gameMode === 'pvc' && isGameActive && currentPlayer === "O") {
+                setTimeout(computerMove, 500);
+            }
+        }
+
+        function makeMove(cell, index) {
+            boardState[index] = currentPlayer;
+            cell.innerHTML = `<span>${currentPlayer}</span>`;
+            cell.classList.add(currentPlayer.toLowerCase(), 'taken');
+
+            checkResult();
+        }
+
+        function checkResult() {
+            let roundWon = false;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                    roundWon = true;
+                    break;
+                }
+            }
+            if (roundWon) {
+                const winnerName = getPlayerName(currentPlayer);
+                statusDisplay.innerText = `${winnerName} Wins!`;
+                triggerCelebration(winnerName);
+                isGameActive = false;
+                return;
+            }
+            if (!boardState.includes("")) {
+                statusDisplay.innerText = "It's a Draw!";
+                isGameActive = false;
+                return;
+            }
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            statusDisplay.innerText = `${getPlayerName(currentPlayer)}'s Turn`;
+        }
+
+        function computerMove() {
+            if (!isGameActive) return;
+
+            let moveIndex = findBestMove();
+            if (moveIndex === -1) {
+                const availableMoves = boardState.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+                moveIndex = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            }
+
+            const targetCell = document.querySelector(`[data-index="${moveIndex}"]`);
+            makeMove(targetCell, moveIndex);
+        }
+
+        function findBestMove() {
+            for (let player of ["O", "X"]) {
+                for (let condition of winningConditions) {
+                    const [a, b, c] = condition;
+                    const vals = [boardState[a], boardState[b], boardState[c]];
+                    const count = vals.filter(v => v === player).length;
+                    const empty = vals.indexOf("");
+
+                    if (count === 2 && empty !== -1) {
+                        return condition[empty];
+                    }
+                }
+            }
+            return -1;
+        }
+
+        function triggerCelebration(winnerName) {
+            const winnerMessage = document.getElementById('winner-message');
+            const celebrationContent = document.querySelector('.celebration-content');
+            winnerMessage.innerText = `${winnerName} Wins!`;
+            celebrationOverlay.classList.add('visible');
+
+            for (let i = 0; i < 30; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle');
+                
+                const size = Math.random() * 6 + 2;
+                sparkle.style.width = `${size}px`;
+                sparkle.style.height = `${size}px`;
+                const angle = Math.random() * 360;
+                const radius = Math.random() * 100 + 100;
+                sparkle.style.top = `calc(50% + ${Math.sin(angle * Math.PI / 180) * radius}px)`;
+                sparkle.style.left = `calc(50% + ${Math.cos(angle * Math.PI / 180) * radius}px)`;
+                
+                sparkle.style.animationDelay = `${Math.random() * 0.3}s`;
+                celebrationContent.appendChild(sparkle);
+            }
+        }
+
+        function setMode(mode) {
+            gameMode = mode;
+            document.getElementById('pvp-mode').classList.toggle('active', mode === 'pvp');
+            document.getElementById('pvc-mode').classList.toggle('active', mode === 'pvc');
+            document.getElementById('player-o-input-container').style.display = mode === 'pvc' ? 'none' : 'block';
+            resetGame();
+        }
+
+        function resetGame() {
+            boardState = ["", "", "", "", "", "", "", "", ""];
+            isGameActive = true;
+            currentPlayer = "X";
+            statusDisplay.innerText = `${getPlayerName(currentPlayer)}'s Turn`;
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.classList.remove('x', 'o', 'taken');
+            });
+            celebrationOverlay.classList.remove('visible');
+            const oldSparkles = document.querySelectorAll('.sparkle');
+            oldSparkles.forEach(s => s.remove());
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        celebrationOverlay.addEventListener('click', () => {
+            celebrationOverlay.classList.remove('visible');
+        });
+        resetGame();
+    </script>
+</body>
+</html>
