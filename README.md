@@ -35,5 +35,6 @@ The game allows users to play against another player or against the computer whi
 2. Open the `TicTacToe.html` file in any modern web browser.
 3. Select the game mode and start playing.
 
+
 ## Author
 Sarvesh Dabke
